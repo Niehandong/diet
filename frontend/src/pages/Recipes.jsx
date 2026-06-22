@@ -19,26 +19,18 @@ const CONSTITUTION_NAMES = {
 
 // 食谱名称到图片URL的映射
 const RECIPE_IMAGE_MAP = {
-  '红枣小米粥': '/images/黄芪红枣茶.png',
-  '枸杞百合粥': '/images/绿豆百合粥.png',
-  '山药排骨汤': '/images/山药枸杞粥.png',
-  '冬瓜海带汤': '/images/薏米红豆汤.png',
-  '菠菜猪肝汤': '/images/当归羊肉汤.png',
-  '南瓜小米粥': '/images/山药枸杞粥.png',
-  '黑豆核桃粥': '/images/核桃黑芝麻糊.png',
-  '银耳莲子羹': '/images/银耳百合羹.png',
-  '清蒸鲈鱼': '/images/薏米红豆汤.png',
-  '红烧排骨': '/images/当归羊肉汤.png',
-  '凉拌黄瓜': '/images/绿豆百合粥.png',
-  '番茄炒蛋': '/images/山药枸杞粥.png',
-  '冬瓜薏米汤': '/images/薏米红豆汤.png',
-  '桂圆红枣茶': '/images/红枣桂圆茶.png',
-  '莲子百合粥': '/images/莲子芡实粥.png',
-  '黑芝麻糊': '/images/核桃黑芝麻糊.png',
-  '杏仁露': '/images/银耳百合羹.png',
-  '生姜红糖水': '/images/红枣桂圆茶.png',
-  '山楂茶': '/images/玫瑰花茶.png',
-  '枸杞菊花茶': '/images/菊花决明子茶.png',
+  '山药枸杞粥': '/images/山药枸杞粥.png',
+  '红枣桂圆茶': '/images/红枣桂圆茶.png',
+  '薏米红豆汤': '/images/薏米红豆汤.png',
+  '银耳百合羹': '/images/银耳百合羹.png',
+  '菊花决明子茶': '/images/菊花决明子茶.png',
+  '当归羊肉汤': '/images/当归羊肉汤.png',
+  '玫瑰花茶': '/images/玫瑰花茶.png',
+  '绿豆百合粥': '/images/绿豆百合粥.png',
+  '核桃黑芝麻糊': '/images/核桃黑芝麻糊.png',
+  '陈皮普洱茶': '/images/陈皮普洱茶.png',
+  '莲子芡实粥': '/images/莲子芡实粥.png',
+  '黄芪红枣茶': '/images/黄芪红枣茶.png',
 }
 
 // 示例食谱数据
