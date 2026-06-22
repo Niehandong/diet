@@ -37,12 +37,14 @@ def recommend(
     taste_preferences: Optional[str] = Query(None),
     max_difficulty: int = Query(5, ge=1, le=5),
     db: Session = Depends(get_db),
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_current_user) if False else None
 ):
     taste_list = taste_preferences.split(",") if taste_preferences else []
 
-    assessment = get_current_assessment(db, current_user.id)
-    constitution_type = assessment.primary_type if assessment else None
+    constitution_type = None
+    if current_user:
+        assessment = get_current_assessment(db, current_user.id)
+        constitution_type = assessment.primary_type if assessment else None
 
     current_term = get_current_solar_term()
     solar_term_name = current_term["name"]

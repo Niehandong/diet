@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { Card, Typography, Input, Button, Tag, Spin, Empty, message } from 'antd'
-import { MessageOutlined, SendOutlined, UserOutlined, RobotOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { useState, useEffect, useRef } from 'react'
+import { Typography, Input, Button, Tag, Spin, Avatar, Tooltip, message } from 'antd'
+import { MessageOutlined, SendOutlined, UserOutlined, RobotOutlined, ReloadOutlined } from '@ant-design/icons'
 import { qaAPI } from '../services/api'
 
 const { Title, Text } = Typography
@@ -10,6 +10,8 @@ function QA() {
   const [questions, setQuestions] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(false)
+  const [typingId, setTypingId] = useState(null)
+  const messagesEndRef = useRef(null)
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -35,6 +37,10 @@ function QA() {
     fetchHistory()
   }, [])
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [questions])
+
   const exampleQuestions = [
     '白露节气适合吃什么',
     '最近总是口干舌燥怎么办',
@@ -42,6 +48,20 @@ function QA() {
     '春季如何养肝',
     '失眠应该吃什么'
   ]
+
+  const typeText = (text, callback) => {
+    let index = 0
+    const intervalId = setInterval(() => {
+      if (index < text.length) {
+        callback(text.slice(0, index + 1))
+        index++
+      } else {
+        clearInterval(intervalId)
+        setTypingId(null)
+      }
+    }, 30)
+    return intervalId
+  }
 
   const handleSend = async () => {
     if (!inputValue.trim() || loading) return
@@ -58,12 +78,22 @@ function QA() {
 
     try {
       const res = await qaAPI.ask(currentInput)
+      const answerText = res.data?.answer || '抱歉，暂时无法回答您的问题。'
+      
+      const answerId = Date.now() + 1
       const answer = {
-        id: Date.now() + 1,
-        answer: res.data?.answer || '抱歉，暂时无法回答您的问题。',
+        id: answerId,
+        answer: '',
         isUser: false
       }
       setQuestions(prev => [...prev, answer])
+      
+      const intervalId = typeText(answerText, (partial) => {
+        setQuestions(prev => prev.map(q => 
+          q.id === answerId ? { ...q, answer: partial } : q
+        ))
+      })
+      setTypingId(intervalId)
     } catch (err) {
       const errorAnswer = {
         id: Date.now() + 1,
@@ -88,101 +118,135 @@ function QA() {
     }
   }
 
+  const refreshChat = () => {
+    setQuestions([])
+  }
+
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* 头部 */}
-      <Card
-        className="border-0 shadow-md mb-6"
-        styles={{ body: { padding: '1.5rem 2rem' } }}
-        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
-      >
-        <div className="flex items-center gap-3 text-white">
-          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-            <RobotOutlined className="text-2xl" />
+    <div className="qa-page">
+      <div className="qa-header">
+        <div className="qa-header-content">
+          <div className="qa-header-left">
+            <Avatar className="qa-avatar-main" icon={<RobotOutlined />} />
+            <div className="qa-header-text">
+              <Title level={3} className="qa-title">AI养生顾问</Title>
+              <div className="qa-status">
+                <span className="status-dot"></span>
+                <Text className="status-text">在线</Text>
+              </div>
+            </div>
           </div>
-          <div>
-            <Title level={3} className="text-white mb-0">AI 养生问答</Title>
-            <Text className="text-green-100">随时咨询您的养生问题</Text>
+          <div className="qa-header-right">
+            <Tooltip title="清空对话">
+              <Button
+                type="text"
+                icon={<ReloadOutlined />}
+                onClick={refreshChat}
+                className="qa-refresh-btn"
+              />
+            </Tooltip>
           </div>
         </div>
-      </Card>
+      </div>
 
-      {/* 聊天区 */}
-      <Card className="shadow-md mb-4" styles={{ body: { padding: 0 } }}>
-        <div className="p-6 min-h-[400px] max-h-[500px] overflow-y-auto">
+      <div className="qa-chat-container">
+        <div className="qa-messages-wrapper">
           {questions.length === 0 ? (
-            <Empty
-              image={<ThunderboltOutlined className="text-4xl text-gray-300" />}
-              description={
-                <div className="text-center">
-                  <Text type="secondary">开始您的第一次养生咨询吧</Text>
+            <div className="qa-empty-state">
+              <div className="qa-empty-content">
+                <div className="qa-empty-avatar">
+                  <RobotOutlined style={{ fontSize: 48 }} />
                 </div>
-              }
-            />
+                <Title level={4} className="qa-empty-title">您好！我是您的AI养生顾问</Title>
+                <Text type="secondary" className="qa-empty-desc">有任何养生问题都可以问我，我会为您提供专业的养生建议</Text>
+              </div>
+              <div className="qa-empty-tips">
+                <Text type="secondary" style={{ fontSize: 14 }}>试试这些问题：</Text>
+                <div className="qa-empty-tags">
+                  {exampleQuestions.slice(0, 3).map((question, index) => (
+                    <Tag
+                      key={index}
+                      onClick={() => handleExampleClick(question)}
+                      className="qa-quick-tag"
+                    >
+                      {question}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
-            <div className="space-y-4">
+            <div className="qa-message-list">
               {questions.map((item) => (
                 <div
                   key={item.id}
-                  className={`flex items-start gap-3 ${item.isUser ? 'flex-row-reverse' : ''}`}
+                  className={`qa-message ${item.isUser ? 'qa-user-message' : 'qa-ai-message'}`}
                 >
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    item.isUser ? 'bg-green-500' : 'bg-blue-500'
-                  }`}>
-                    {item.isUser
-                      ? <UserOutlined className="text-white" />
-                      : <RobotOutlined className="text-white" />
-                    }
-                  </div>
-                  <div className={`max-w-[75%] ${item.isUser ? 'text-right' : ''}`}>
-                    <div className={`inline-block px-4 py-3 rounded-2xl text-left whitespace-pre-wrap ${
-                      item.isUser
-                        ? 'bg-green-500 text-white rounded-tr-sm'
-                        : 'bg-gray-100 text-gray-800 rounded-tl-sm'
-                    }`}>
-                      {item.question || item.answer}
+                  <Avatar
+                    className={`qa-message-avatar ${item.isUser ? 'user-avatar' : 'ai-avatar'}`}
+                    icon={item.isUser ? <UserOutlined /> : <RobotOutlined />}
+                  />
+                  <div className={`qa-message-content ${item.isUser ? 'user-content' : 'ai-content'}`}>
+                    <div className={`qa-message-bubble ${item.isUser ? 'user-bubble' : 'ai-bubble'}`}>
+                      <div className="qa-message-text">
+                        {item.question || item.answer}
+                      </div>
+                      {!item.isUser && typingId && item.answer && item.answer.length > 0 && (
+                        <div className="qa-typing-indicator">
+                          <span className="typing-dot"></span>
+                          <span className="typing-dot"></span>
+                          <span className="typing-dot"></span>
+                        </div>
+                      )}
                     </div>
+                    {item.isHistory && (
+                      <Text className="qa-message-time">历史记录</Text>
+                    )}
                   </div>
                 </div>
               ))}
-
-              {loading && (
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                    <RobotOutlined className="text-white" />
-                  </div>
-                  <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm">
-                    <Spin size="small" /> <Text type="secondary" className="ml-2">正在思考...</Text>
+              {loading && !typingId && (
+                <div className="qa-message qa-ai-message">
+                  <Avatar className="qa-message-avatar ai-avatar" icon={<RobotOutlined />} />
+                  <div className="qa-message-content ai-content">
+                    <div className="qa-message-bubble ai-bubble">
+                      <div className="qa-thinking">
+                        <Spin size="small" />
+                        <Text type="secondary" style={{ marginLeft: 8 }}>正在思考养生方案...</Text>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
+              <div ref={messagesEndRef} />
             </div>
           )}
         </div>
 
-        <div className="p-4 border-t border-gray-100 bg-gray-50">
-          <div className="mb-3">
-            <Text type="secondary" className="text-xs">试试这些问题：</Text>
+        <div className="qa-input-area">
+          <div className="qa-quick-questions">
+            <Text type="secondary" className="qa-quick-label">快捷问题：</Text>
+            <div className="qa-quick-tags">
+              {exampleQuestions.map((question, index) => (
+                <Tag
+                  key={index}
+                  onClick={() => handleExampleClick(question)}
+                  className="qa-quick-tag"
+                >
+                  <MessageOutlined style={{ marginRight: 4 }} />
+                  {question}
+                </Tag>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2 mb-3">
-            {exampleQuestions.map((question, index) => (
-              <Tag
-                key={index}
-                onClick={() => handleExampleClick(question)}
-                className="cursor-pointer px-3 py-1 rounded-full hover:bg-green-50 hover:border-green-300 transition-colors"
-              >
-                {question}
-              </Tag>
-            ))}
-          </div>
-          <div className="flex items-end gap-2">
+          <div className="qa-input-wrapper">
             <TextArea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="输入您的养生问题...(Shift+Enter 换行)"
-              autoSize={{ minRows: 1, maxRows: 4 }}
-              className="flex-1"
+              placeholder="输入您的养生问题..."
+              autoSize={{ minRows: 1, maxRows: 3 }}
+              className="qa-input"
             />
             <Button
               type="primary"
@@ -190,13 +254,13 @@ function QA() {
               onClick={handleSend}
               disabled={!inputValue.trim() || loading}
               loading={loading}
-              className="h-10 px-5 bg-green-500 hover:!bg-green-600 border-green-500"
+              className="qa-send-btn"
             >
               发送
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   )
 }

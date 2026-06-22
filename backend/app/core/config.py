@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     TONGYI_API_KEY: str | None = None
     ZHIPU_API_KEY: str | None = None
     KIMI_API_KEY: str | None = None
+    DEEPSEEK_API_KEY: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env")
 
